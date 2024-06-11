@@ -13,16 +13,24 @@
   padding: 20px;
   font-family: Arial, sans-serif;
   min-height: 100vh;
+  opacity: 0;
+  animation: fadeIn 1s forwards;
 }
 
 .header {
   border-bottom: 2px solid var(--hint-color);
   padding-bottom: 10px;
   margin-bottom: 20px;
+  opacity: 0;
+  animation: slideIn 0.5s forwards;
+  animation-delay: 0.5s;
 }
 
 .user-details, .chat-details {
   margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+  animation-delay: 1s;
 }
 
 button {
@@ -32,4 +40,23 @@ button {
   padding: 10px 20px;
   cursor: pointer;
   border-radius: 5px;
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+  animation-delay: 1.5s;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
