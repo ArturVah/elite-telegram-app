@@ -8,6 +8,30 @@ function App() {
   const [error, setError] = useState(false);
   const [debugInfo, setDebugInfo] = useState({}); // State for debug information
 
+  const fetchFileUrl = useCallback(async (fileId, debugData) => {
+    const botToken = process.env.REACT_APP_BOT_TOKEN;
+    try {
+      const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
+        params: { file_id: fileId }
+      });
+
+      debugData.fileUrlResponse = response.data; // Add response to debug info
+      setDebugInfo({ ...debugData });
+
+      if (response.data && response.data.result) {
+        const filePath = response.data.result.file_path;
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        setProfilePhotoUrl(fileUrl);
+      } else {
+        debugData.fileUrlError = 'Error fetching file path';
+        setDebugInfo({ ...debugData });
+      }
+    } catch (error) {
+      debugData.fileUrlError = error.toString(); // Add error to debug info
+      setDebugInfo({ ...debugData });
+    }
+  }, []);
+
   const fetchUserProfilePhoto = useCallback(async (userId, debugData) => {
     const botToken = process.env.REACT_APP_BOT_TOKEN;
     try {
@@ -17,44 +41,20 @@ function App() {
       });
 
       debugData.profilePhotosResponse = response.data; // Add response to debug info
-      setDebugInfo(debugData);
+      setDebugInfo({ ...debugData });
 
       if (response.data && response.data.result && response.data.result.photos.length > 0) {
         const fileId = response.data.result.photos[0][0].file_id;
         fetchFileUrl(fileId, debugData);
       } else {
         debugData.profilePhotoError = 'No profile photo found for the user';
-        setDebugInfo(debugData);
+        setDebugInfo({ ...debugData });
       }
     } catch (error) {
       debugData.profilePhotoError = error.toString(); // Add error to debug info
-      setDebugInfo(debugData);
+      setDebugInfo({ ...debugData });
     }
-  }, []);
-
-  const fetchFileUrl = useCallback(async (fileId, debugData) => {
-    const botToken = process.env.REACT_APP_BOT_TOKEN;
-    try {
-      const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
-        params: { file_id: fileId }
-      });
-
-      debugData.fileUrlResponse = response.data; // Add response to debug info
-      setDebugInfo(debugData);
-
-      if (response.data && response.data.result) {
-        const filePath = response.data.result.file_path;
-        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-        setProfilePhotoUrl(fileUrl);
-      } else {
-        debugData.fileUrlError = 'Error fetching file path';
-        setDebugInfo(debugData);
-      }
-    } catch (error) {
-      debugData.fileUrlError = error.toString(); // Add error to debug info
-      setDebugInfo(debugData);
-    }
-  }, []);
+  }, [fetchFileUrl]);
 
   useEffect(() => {
     const debugData = {};
