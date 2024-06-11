@@ -1,10 +1,35 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --hint-color: #707070;
+  --link-color: #0000ee;
+  --button-color: #0088cc;
+  --button-text-color: #ffffff;
 }
 
-body {
-  background: var(--tg-theme-bg-color);
-  color: var(--tg-theme-text-color);
+.App {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+}
+
+.header {
+  border-bottom: 2px solid var(--hint-color);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.user-details, .chat-details {
+  margin-bottom: 20px;
+}
+
+button {
+  background-color: var(--button-color);
+  color: var(--button-text-color);
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
 }
