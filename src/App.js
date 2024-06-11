@@ -35,7 +35,7 @@ function App() {
       const initDataUnsafe = tg.initDataUnsafe || {};
       debugData.initDataUnsafe = initDataUnsafe;
       addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe)}`);
-      setDebugInfo(debugData);
+      setDebugInfo([debugData]);
 
       const user = initDataUnsafe.user;
 
