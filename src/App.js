@@ -7,18 +7,19 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
+  const [debugInfo, setDebugInfo] = useState([]);
+
+  const addDebugInfo = (message) => {
+    setDebugInfo((prevDebugInfo) => [...prevDebugInfo, message]);
+  };
 
   useEffect(() => {
-    const debugData = {};
-
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
 
       const initDataUnsafe = tg.initDataUnsafe || {};
-      debugData.initDataUnsafe = initDataUnsafe;
-      setDebugInfo(debugData);
+      addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe)}`);
 
       const user = initDataUnsafe.user;
 
@@ -49,23 +50,27 @@ function App() {
       tg.MainButton.show();
 
       tg.MainButton.onClick(() => {
+        addDebugInfo('MainButton clicked');
         openTONWallet();
       });
 
       setLoading(false);
     } else {
-      debugData.error = 'Telegram WebApp not available';
-      setDebugInfo(debugData);
+      addDebugInfo('Telegram WebApp not available');
       setLoading(false);
       setError(true);
     }
   }, []);
 
   const openTONWallet = () => {
+    addDebugInfo('openTONWallet called');
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       const walletLink = `ton://transfer/${TON_ADDRESS}?amount=1000000000&text=Payment for services`;
+      addDebugInfo(`Opening link: ${walletLink}`);
       tg.openLink(walletLink);
+    } else {
+      addDebugInfo('Telegram WebApp not available');
     }
   };
 
@@ -77,7 +82,10 @@ function App() {
     return (
       <div>
         <div>Authentication failed or not accessed through Telegram</div>
-        <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
+        <div className="debug-info">
+          <h2>Debug Information</h2>
+          <pre>{debugInfo.join('\n')}</pre>
+        </div>
       </div>
     );
   }
@@ -85,8 +93,10 @@ function App() {
   return (
     <div className="App">
       <h1>Welcome, {user && user.first_name}</h1>
-      <h2>Debug Information</h2>
-      <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+      <div className="debug-info">
+        <h2>Debug Information</h2>
+        <pre>{debugInfo.join('\n')}</pre>
+      </div>
     </div>
   );
 }
