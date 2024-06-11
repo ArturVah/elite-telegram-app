@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 
 const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR'; // Your TON address
@@ -7,31 +7,18 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState([]);
-
-  const addDebugInfo = (message) => {
-    setDebugInfo((prevDebugInfo) => [...prevDebugInfo, message]);
-  };
-
-  const openTONWallet = useCallback(() => {
-    addDebugInfo('openTONWallet called');
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=1000000000&text=Payment for services`;
-      addDebugInfo(`Opening link: ${walletLink}`);
-      tg.openLink(walletLink);
-    } else {
-      addDebugInfo('Telegram WebApp not available');
-    }
-  }, [TON_ADDRESS]);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
+    const debugData = {};
+
     if (window.Telegram && window.Telegram.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
 
       const initDataUnsafe = tg.initDataUnsafe || {};
-      addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe)}`);
+      debugData.initDataUnsafe = initDataUnsafe;
+      setDebugInfo(debugData);
 
       const user = initDataUnsafe.user;
 
@@ -62,17 +49,25 @@ function App() {
       tg.MainButton.show();
 
       tg.MainButton.onClick(() => {
-        addDebugInfo('MainButton clicked');
         openTONWallet();
       });
 
       setLoading(false);
     } else {
-      addDebugInfo('Telegram WebApp not available');
+      debugData.error = 'Telegram WebApp not available';
+      setDebugInfo(debugData);
       setLoading(false);
       setError(true);
     }
-  }, [openTONWallet]);
+  }, []);
+
+  const openTONWallet = () => {
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=100000&text=Payment for services`;
+      tg.openLink(walletLink);
+    }
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -82,10 +77,7 @@ function App() {
     return (
       <div>
         <div>Authentication failed or not accessed through Telegram</div>
-        <div className="debug-info">
-          <h2>Debug Information</h2>
-          <pre>{debugInfo.join('\n')}</pre>
-        </div>
+        <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
       </div>
     );
   }
@@ -93,10 +85,8 @@ function App() {
   return (
     <div className="App">
       <h1>Welcome, {user && user.first_name}</h1>
-      <div className="debug-info">
-        <h2>Debug Information</h2>
-        <pre>{debugInfo.join('\n')}</pre>
-      </div>
+      <h2>Debug Information</h2>
+      <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
     </div>
   );
 }
