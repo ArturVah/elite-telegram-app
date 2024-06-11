@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 
+const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR'; // Your TON address
+
 function App() {
   const [user, setUser] = useState(null);
-  const [chat, setChat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null); // State for debug information
+  const [debugInfo, setDebugInfo] = useState(null);
 
   useEffect(() => {
     const debugData = {};
@@ -17,20 +18,15 @@ function App() {
 
       const initDataUnsafe = tg.initDataUnsafe || {};
       debugData.initDataUnsafe = initDataUnsafe;
-      setDebugInfo(debugData); // Update debug information in the UI
+      setDebugInfo(debugData);
 
       const user = initDataUnsafe.user;
-      const chat = initDataUnsafe.chat;
 
       if (user) {
         setUser(user);
       }
 
-      if (chat) {
-        setChat(chat);
-      }
-
-      // Extract and set theme parameters
+      // Set theme parameters
       const {
         bg_color = '#ffffff',
         text_color = '#000000',
@@ -47,6 +43,15 @@ function App() {
       document.documentElement.style.setProperty('--button-color', button_color);
       document.documentElement.style.setProperty('--button-text-color', button_text_color);
 
+      tg.MainButton.text = "Send TON";
+      tg.MainButton.color = button_color;
+      tg.MainButton.textColor = button_text_color;
+      tg.MainButton.show();
+
+      tg.MainButton.onClick(() => {
+        openTONWallet();
+      });
+
       setLoading(false);
     } else {
       debugData.error = 'Telegram WebApp not available';
@@ -55,6 +60,14 @@ function App() {
       setError(true);
     }
   }, []);
+
+  const openTONWallet = () => {
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=1000000000&text=Payment for services`;
+      tg.openLink(walletLink);
+    }
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -71,36 +84,9 @@ function App() {
 
   return (
     <div className="App">
-      {user ? (
-        <div>
-          <h1 className="header">Welcome, {user.first_name} {user.last_name}</h1>
-          <div className="user-details">
-            <p>Username: {user.username}</p>
-            <p>Language: {user.language_code}</p>
-            <p>Allows Write to PM: {user.allows_write_to_pm ? 'Yes' : 'No'}</p>
-          </div>
-          <h2 className="header">Chat Information</h2>
-          {chat ? (
-            <div className="chat-details">
-              <p>Chat ID: {chat.id}</p>
-              <p>Type: {chat.type}</p>
-              {chat.title && <p>Title: {chat.title}</p>}
-              {chat.username && <p>Username: {chat.username}</p>}
-              {chat.first_name && <p>First Name: {chat.first_name}</p>}
-              {chat.last_name && <p>Last Name: {chat.last_name}</p>}
-            </div>
-          ) : (
-            <p>No chat information available</p>
-          )}
-          <h2 className="header">Debug Information</h2>
-          <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
-        </div>
-      ) : (
-        <div>
-          <h1>Authentication failed</h1>
-          <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
-        </div>
-      )}
+      <h1>Welcome, {user && user.first_name}</h1>
+      <h2>Debug Information</h2>
+      <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
     </div>
   );
 }
