@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,6 +30,23 @@ function App() {
         setChat(chat);
       }
 
+      // Extract and set theme parameters
+      const {
+        bg_color = '#ffffff',
+        text_color = '#000000',
+        hint_color = '#707070',
+        link_color = '#0000ee',
+        button_color = '#0088cc',
+        button_text_color = '#ffffff'
+      } = tg.themeParams || {};
+
+      document.documentElement.style.setProperty('--bg-color', bg_color);
+      document.documentElement.style.setProperty('--text-color', text_color);
+      document.documentElement.style.setProperty('--hint-color', hint_color);
+      document.documentElement.style.setProperty('--link-color', link_color);
+      document.documentElement.style.setProperty('--button-color', button_color);
+      document.documentElement.style.setProperty('--button-text-color', button_text_color);
+
       setLoading(false);
     } else {
       debugData.error = 'Telegram WebApp not available';
@@ -55,13 +73,15 @@ function App() {
     <div className="App">
       {user ? (
         <div>
-          <h1>Welcome, {user.first_name} {user.last_name}</h1>
-          <p>Username: {user.username}</p>
-          <p>Language: {user.language_code}</p>
-          <p>Allows Write to PM: {user.allows_write_to_pm ? 'Yes' : 'No'}</p>
-          <h2>Chat Information</h2>
+          <h1 className="header">Welcome, {user.first_name} {user.last_name}</h1>
+          <div className="user-details">
+            <p>Username: {user.username}</p>
+            <p>Language: {user.language_code}</p>
+            <p>Allows Write to PM: {user.allows_write_to_pm ? 'Yes' : 'No'}</p>
+          </div>
+          <h2 className="header">Chat Information</h2>
           {chat ? (
-            <div>
+            <div className="chat-details">
               <p>Chat ID: {chat.id}</p>
               <p>Type: {chat.type}</p>
               {chat.title && <p>Title: {chat.title}</p>}
@@ -72,7 +92,7 @@ function App() {
           ) : (
             <p>No chat information available</p>
           )}
-          <h2>Debug Information</h2>
+          <h2 className="header">Debug Information</h2>
           <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
         </div>
       ) : (
