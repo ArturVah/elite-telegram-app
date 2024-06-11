@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 
 const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR'; // Your TON address
@@ -7,7 +7,23 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
+  const [debugInfo, setDebugInfo] = useState([]);
+
+  const addDebugInfo = (message) => {
+    setDebugInfo((prevDebugInfo) => [...prevDebugInfo, message]);
+  };
+
+  const openTONWallet = useCallback(() => {
+    addDebugInfo('openTONWallet called');
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=100000&text=Payment for services`;
+      addDebugInfo(`Opening link: ${walletLink}`);
+      tg.openLink(walletLink);
+    } else {
+      addDebugInfo('Telegram WebApp not available');
+    }
+  }, []);
 
   useEffect(() => {
     const debugData = {};
@@ -18,6 +34,7 @@ function App() {
 
       const initDataUnsafe = tg.initDataUnsafe || {};
       debugData.initDataUnsafe = initDataUnsafe;
+      addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe)}`);
       setDebugInfo(debugData);
 
       const user = initDataUnsafe.user;
@@ -49,25 +66,17 @@ function App() {
       tg.MainButton.show();
 
       tg.MainButton.onClick(() => {
+        addDebugInfo('MainButton clicked');
         openTONWallet();
       });
 
       setLoading(false);
     } else {
-      debugData.error = 'Telegram WebApp not available';
-      setDebugInfo(debugData);
+      addDebugInfo('Telegram WebApp not available');
       setLoading(false);
       setError(true);
     }
-  }, []);
-
-  const openTONWallet = () => {
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=100000&text=Payment for services`;
-      tg.openLink(walletLink);
-    }
-  };
+  }, [openTONWallet]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -75,19 +84,24 @@ function App() {
 
   if (error) {
     return (
-      <div>
-        <div>Authentication failed or not accessed through Telegram</div>
-        <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
-      </div>
+        <div>
+          <div>Authentication failed or not accessed through Telegram</div>
+          <div className="debug-info">
+            <h2>Debug Information</h2>
+            <pre>{debugInfo.join('\n')}</pre>
+          </div>
+        </div>
     );
   }
 
   return (
-    <div className="App">
-      <h1>Welcome, {user && user.first_name}</h1>
-      <h2>Debug Information</h2>
-      <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-    </div>
+      <div className="App">
+        <h1>Welcome, {user && user.first_name}</h1>
+        <div className="debug-info">
+          <h2>Debug Information</h2>
+          <pre>{debugInfo.join('\n')}</pre>
+        </div>
+      </div>
   );
 }
 
