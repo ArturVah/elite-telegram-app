@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 
 function App() {
@@ -7,6 +7,54 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [debugInfo, setDebugInfo] = useState({}); // State for debug information
+
+  const fetchUserProfilePhoto = useCallback(async (userId, debugData) => {
+    const botToken = process.env.REACT_APP_BOT_TOKEN;
+    try {
+      const response = await axios.post(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos`, {
+        user_id: userId,
+        limit: 1
+      });
+
+      debugData.profilePhotosResponse = response.data; // Add response to debug info
+      setDebugInfo(debugData);
+
+      if (response.data && response.data.result && response.data.result.photos.length > 0) {
+        const fileId = response.data.result.photos[0][0].file_id;
+        fetchFileUrl(fileId, debugData);
+      } else {
+        debugData.profilePhotoError = 'No profile photo found for the user';
+        setDebugInfo(debugData);
+      }
+    } catch (error) {
+      debugData.profilePhotoError = error.toString(); // Add error to debug info
+      setDebugInfo(debugData);
+    }
+  }, []);
+
+  const fetchFileUrl = useCallback(async (fileId, debugData) => {
+    const botToken = process.env.REACT_APP_BOT_TOKEN;
+    try {
+      const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
+        params: { file_id: fileId }
+      });
+
+      debugData.fileUrlResponse = response.data; // Add response to debug info
+      setDebugInfo(debugData);
+
+      if (response.data && response.data.result) {
+        const filePath = response.data.result.file_path;
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        setProfilePhotoUrl(fileUrl);
+      } else {
+        debugData.fileUrlError = 'Error fetching file path';
+        setDebugInfo(debugData);
+      }
+    } catch (error) {
+      debugData.fileUrlError = error.toString(); // Add error to debug info
+      setDebugInfo(debugData);
+    }
+  }, []);
 
   useEffect(() => {
     const debugData = {};
@@ -34,55 +82,7 @@ function App() {
       setLoading(false);
       setError(true);
     }
-  }, []);
-
-  const fetchUserProfilePhoto = async (userId, debugData) => {
-    const botToken = process.env.REACT_APP_BOT_TOKEN;
-    try {
-      const response = await axios.post(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos`, {
-        user_id: userId,
-        limit: 1
-      });
-
-      debugData.profilePhotosResponse = response.data; // Add response to debug info
-      setDebugInfo(debugData);
-
-      if (response.data && response.data.result && response.data.result.photos.length > 0) {
-        const fileId = response.data.result.photos[0][0].file_id;
-        fetchFileUrl(fileId, debugData);
-      } else {
-        debugData.profilePhotoError = 'No profile photo found for the user';
-        setDebugInfo(debugData);
-      }
-    } catch (error) {
-      debugData.profilePhotoError = error.toString(); // Add error to debug info
-      setDebugInfo(debugData);
-    }
-  };
-
-  const fetchFileUrl = async (fileId, debugData) => {
-    const botToken = process.env.REACT_APP_BOT_TOKEN;
-    try {
-      const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
-        params: { file_id: fileId }
-      });
-
-      debugData.fileUrlResponse = response.data; // Add response to debug info
-      setDebugInfo(debugData);
-
-      if (response.data && response.data.result) {
-        const filePath = response.data.result.file_path;
-        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-        setProfilePhotoUrl(fileUrl);
-      } else {
-        debugData.fileUrlError = 'Error fetching file path';
-        setDebugInfo(debugData);
-      }
-    } catch (error) {
-      debugData.fileUrlError = error.toString(); // Add error to debug info
-      setDebugInfo(debugData);
-    }
-  };
+  }, [fetchUserProfilePhoto]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -92,7 +92,7 @@ function App() {
     return (
       <div>
         <div>Authentication failed or not accessed through Telegram</div>
-        <pre> {JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
+        <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
       </div>
     );
   }
