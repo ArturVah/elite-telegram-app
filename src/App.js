@@ -37,7 +37,7 @@ function App() {
   }, []);
 
   const fetchUserProfilePhoto = async (userId, debugData) => {
-    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc';
+    const botToken = process.env.REACT_APP_BOT_TOKEN;
     try {
       const response = await axios.post(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos`, {
         user_id: userId,
@@ -61,7 +61,7 @@ function App() {
   };
 
   const fetchFileUrl = async (fileId, debugData) => {
-    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc';
+    const botToken = process.env.REACT_APP_BOT_TOKEN;
     try {
       const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
         params: { file_id: fileId }
