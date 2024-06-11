@@ -19,7 +19,12 @@ function App() {
       const tg = window.Telegram.WebApp;
       const walletLink = `ton://transfer/${TON_ADDRESS}?amount=100000&text=Payment for services`;
       addDebugInfo(`Opening link: ${walletLink}`);
-      tg.openLink(walletLink);
+      try {
+        tg.openLink(walletLink);
+        addDebugInfo('Link opened');
+      } catch (error) {
+        addDebugInfo(`Error opening link: ${error.message}`);
+      }
     } else {
       addDebugInfo('Telegram WebApp not available');
     }
@@ -34,8 +39,8 @@ function App() {
 
       const initDataUnsafe = tg.initDataUnsafe || {};
       debugData.initDataUnsafe = initDataUnsafe;
-      addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe)}`);
-      setDebugInfo([debugData]);
+      addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe, null, 2)}`);
+      setDebugInfo((prevDebugInfo) => [...prevDebugInfo, debugData]);
 
       const user = initDataUnsafe.user;
 
