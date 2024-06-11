@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 
 const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR'; // Your TON address
@@ -12,6 +12,18 @@ function App() {
   const addDebugInfo = (message) => {
     setDebugInfo((prevDebugInfo) => [...prevDebugInfo, message]);
   };
+
+  const openTONWallet = useCallback(() => {
+    addDebugInfo('openTONWallet called');
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=1000000000&text=Payment for services`;
+      addDebugInfo(`Opening link: ${walletLink}`);
+      tg.openLink(walletLink);
+    } else {
+      addDebugInfo('Telegram WebApp not available');
+    }
+  }, [TON_ADDRESS]);
 
   useEffect(() => {
     if (window.Telegram && window.Telegram.WebApp) {
@@ -60,19 +72,7 @@ function App() {
       setLoading(false);
       setError(true);
     }
-  }, []);
-
-  const openTONWallet = () => {
-    addDebugInfo('openTONWallet called');
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=1000000000&text=Payment for services`;
-      addDebugInfo(`Opening link: ${walletLink}`);
-      tg.openLink(walletLink);
-    } else {
-      addDebugInfo('Telegram WebApp not available');
-    }
-  };
+  }, [openTONWallet]);
 
   if (loading) {
     return <div>Loading...</div>;
