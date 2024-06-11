@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -21,25 +20,8 @@ function App() {
       const user = initDataUnsafe.user;
 
       if (user) {
-        axios.post('/auth', user)
-          .then(response => {
-            debugData.authResponse = response.data; // Add auth response to debug info
-            setDebugInfo(debugData);
-
-            if (response.data.success) {
-              setUser(response.data.user);
-            } else {
-              setError(true);
-            }
-          })
-          .catch(error => {
-            debugData.authError = error.toString(); // Add error to debug info
-            setDebugInfo(debugData);
-            setError(true);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
+        setUser(user);
+        setLoading(false);
       } else {
         setLoading(false);
         setError(true); // Set error if user data is not present
@@ -70,6 +52,7 @@ function App() {
       {user ? (
         <div>
           <h1>Welcome, {user.first_name}</h1>
+          <pre>{JSON.stringify(user, null, 2)}</pre> {/* Display user information */}
           <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
         </div>
       ) : (
