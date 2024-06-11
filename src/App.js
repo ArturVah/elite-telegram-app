@@ -6,7 +6,7 @@ function App() {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null); // State for debug information
+  const [debugInfo, setDebugInfo] = useState({}); // State for debug information
 
   useEffect(() => {
     const debugData = {};
@@ -23,10 +23,11 @@ function App() {
 
       if (user) {
         setUser(user);
-        fetchUserProfilePhoto(user.id);
+        fetchUserProfilePhoto(user.id, debugData);
+      } else {
+        setLoading(false);
+        setError(true); // Set error if user data is not present
       }
-
-      setLoading(false);
     } else {
       debugData.error = 'Telegram WebApp not available';
       setDebugInfo(debugData);
@@ -35,41 +36,51 @@ function App() {
     }
   }, []);
 
-  const fetchUserProfilePhoto = async (userId) => {
-    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc'; 
+  const fetchUserProfilePhoto = async (userId, debugData) => {
+    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc';
     try {
       const response = await axios.post(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos`, {
         user_id: userId,
         limit: 1
       });
 
+      debugData.profilePhotosResponse = response.data; // Add response to debug info
+      setDebugInfo(debugData);
+
       if (response.data && response.data.result && response.data.result.photos.length > 0) {
         const fileId = response.data.result.photos[0][0].file_id;
-        fetchFileUrl(fileId);
+        fetchFileUrl(fileId, debugData);
       } else {
-        console.error('No profile photo found for the user');
+        debugData.profilePhotoError = 'No profile photo found for the user';
+        setDebugInfo(debugData);
       }
     } catch (error) {
-      console.error('Error fetching user profile photo:', error);
+      debugData.profilePhotoError = error.toString(); // Add error to debug info
+      setDebugInfo(debugData);
     }
   };
 
-  const fetchFileUrl = async (fileId) => {
-    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc'; 
+  const fetchFileUrl = async (fileId, debugData) => {
+    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc';
     try {
       const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
         params: { file_id: fileId }
       });
+
+      debugData.fileUrlResponse = response.data; // Add response to debug info
+      setDebugInfo(debugData);
 
       if (response.data && response.data.result) {
         const filePath = response.data.result.file_path;
         const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
         setProfilePhotoUrl(fileUrl);
       } else {
-        console.error('Error fetching file path');
+        debugData.fileUrlError = 'Error fetching file path';
+        setDebugInfo(debugData);
       }
     } catch (error) {
-      console.error('Error fetching file URL:', error);
+      debugData.fileUrlError = error.toString(); // Add error to debug info
+      setDebugInfo(debugData);
     }
   };
 
