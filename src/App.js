@@ -92,7 +92,7 @@ function App() {
     return (
       <div>
         <div>Authentication failed or not accessed through Telegram</div>
-        <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
+        <pre> {JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
       </div>
     );
   }
