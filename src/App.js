@@ -1,57 +1,60 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import {createWallet, getBalance, createTransfer} from './tonUtils';
+import TonConnect from '@tonconnect/sdk';
 
-const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR'; // Your TON address
+const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR';
 
 function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [wallet, setWallet] = useState(null);
-    const [balance, setBalance] = useState(null);
     const [transactionStatus, setTransactionStatus] = useState(null);
 
     useEffect(() => {
-        const init = async () => {
-            try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    const tg = window.Telegram.WebApp;
-                    tg.ready();
+        const tonConnect = new TonConnect();
 
-                    const initDataUnsafe = tg.initDataUnsafe || {};
-                    setUser(initDataUnsafe.user);
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
 
-                    const {wallet, keyPair} = await createWallet();
-                    setWallet(wallet);
+            const initDataUnsafe = tg.initDataUnsafe || {};
+            setUser(initDataUnsafe.user);
 
-                    const balance = await getBalance(wallet);
-                    setBalance(balance);
+            tg.MainButton.text = "Pay with TON";
+            tg.MainButton.show();
 
-                    tg.MainButton.text = "Buy with TON";
-                    tg.MainButton.show();
+            tg.MainButton.onClick(async () => {
+                try {
+                    // Example of creating a payment request
+                    const paymentRequest = {
+                        to: TON_ADDRESS,
+                        amount: '100000', // Amount in nanotons (1 TON = 1e9 nanotons)
+                        stateInit: '',
+                        data: 'Payment for services'
+                    };
 
-                    tg.MainButton.onClick(async () => {
-                        try {
-                            const transfer = await createTransfer(wallet, keyPair, TON_ADDRESS, '100000', 'Payment for virtual item');
+                    // Connect to the user's wallet and request a payment
+                    const connectionResult = await tonConnect.connectWallet();
+                    if (connectionResult.status === 'success') {
+                        const paymentResult = await tonConnect.createTransfer(paymentRequest);
+                        if (paymentResult.status === 'success') {
                             setTransactionStatus('Transaction successful');
-                        } catch (error) {
-                            setTransactionStatus(`Transaction failed: ${error.message}`);
+                        } else {
+                            setTransactionStatus('Transaction failed');
                         }
-                    });
-
-                    setLoading(false);
-                } else {
-                    setError(true);
-                    setLoading(false);
+                    } else {
+                        setTransactionStatus('Wallet connection failed');
+                    }
+                } catch (error) {
+                    setTransactionStatus(`Transaction failed: ${error.message}`);
                 }
-            } catch (error) {
-                setError(true);
-                setLoading(false);
-            }
-        };
+            });
 
-        init();
+            setLoading(false);
+        } else {
+            setError(true);
+            setLoading(false);
+        }
     }, []);
 
     if (loading) {
@@ -65,7 +68,6 @@ function App() {
     return (
         <div className="App">
             <h1>Welcome, {user?.first_name}</h1>
-            <p>Your wallet balance: {balance}</p>
             {transactionStatus && <p>{transactionStatus}</p>}
         </div>
     );
