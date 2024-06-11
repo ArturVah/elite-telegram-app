@@ -1,60 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
+  const [chat, setChat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState({}); // State for debug information
-
-  const fetchFileUrl = useCallback(async (fileId, debugData) => {
-    const botToken = process.env.REACT_APP_BOT_TOKEN;
-    try {
-      const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
-        params: { file_id: fileId }
-      });
-
-      debugData.fileUrlResponse = response.data; // Add response to debug info
-      setDebugInfo({ ...debugData });
-
-      if (response.data && response.data.result) {
-        const filePath = response.data.result.file_path;
-        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-        setProfilePhotoUrl(fileUrl);
-      } else {
-        debugData.fileUrlError = 'Error fetching file path';
-        setDebugInfo({ ...debugData });
-      }
-    } catch (error) {
-      debugData.fileUrlError = error.toString(); // Add error to debug info
-      setDebugInfo({ ...debugData });
-    }
-  }, []);
-
-  const fetchUserProfilePhoto = useCallback(async (userId, debugData) => {
-    const botToken = process.env.REACT_APP_BOT_TOKEN;
-    try {
-      const response = await axios.post(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos`, {
-        user_id: userId,
-        limit: 1
-      });
-
-      debugData.profilePhotosResponse = response.data; // Add response to debug info
-      setDebugInfo({ ...debugData });
-
-      if (response.data && response.data.result && response.data.result.photos.length > 0) {
-        const fileId = response.data.result.photos[0][0].file_id;
-        fetchFileUrl(fileId, debugData);
-      } else {
-        debugData.profilePhotoError = 'No profile photo found for the user';
-        setDebugInfo({ ...debugData });
-      }
-    } catch (error) {
-      debugData.profilePhotoError = error.toString(); // Add error to debug info
-      setDebugInfo({ ...debugData });
-    }
-  }, [fetchFileUrl]);
+  const [debugInfo, setDebugInfo] = useState(null); // State for debug information
 
   useEffect(() => {
     const debugData = {};
@@ -68,21 +19,24 @@ function App() {
       setDebugInfo(debugData); // Update debug information in the UI
 
       const user = initDataUnsafe.user;
+      const chat = initDataUnsafe.chat;
 
       if (user) {
         setUser(user);
-        fetchUserProfilePhoto(user.id, debugData);
-      } else {
-        setLoading(false);
-        setError(true); // Set error if user data is not present
       }
+
+      if (chat) {
+        setChat(chat);
+      }
+
+      setLoading(false);
     } else {
       debugData.error = 'Telegram WebApp not available';
       setDebugInfo(debugData);
       setLoading(false);
       setError(true);
     }
-  }, [fetchUserProfilePhoto]);
+  }, []);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -101,9 +55,24 @@ function App() {
     <div className="App">
       {user ? (
         <div>
-          <h1>Welcome, {user.first_name}</h1>
-          {profilePhotoUrl && <img src={profilePhotoUrl} alt="Profile" />}
-          <pre>{JSON.stringify(user, null, 2)}</pre> {/* Display user information */}
+          <h1>Welcome, {user.first_name} {user.last_name}</h1>
+          <p>Username: {user.username}</p>
+          <p>Language: {user.language_code}</p>
+          <p>Allows Write to PM: {user.allows_write_to_pm ? 'Yes' : 'No'}</p>
+          <h2>Chat Information</h2>
+          {chat ? (
+            <div>
+              <p>Chat ID: {chat.id}</p>
+              <p>Type: {chat.type}</p>
+              {chat.title && <p>Title: {chat.title}</p>}
+              {chat.username && <p>Username: {chat.username}</p>}
+              {chat.first_name && <p>First Name: {chat.first_name}</p>}
+              {chat.last_name && <p>Last Name: {chat.last_name}</p>}
+            </div>
+          ) : (
+            <p>No chat information available</p>
+          )}
+          <h2>Debug Information</h2>
           <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
         </div>
       ) : (
