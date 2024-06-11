@@ -1,113 +1,74 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, {useEffect, useState} from 'react';
 import './App.css';
+import {createWallet, getBalance, createTransfer} from './tonUtils';
 
 const TON_ADDRESS = 'UQClXO69V6LqEtlPId-WBJa3RyggyTS_8NJciV5kV2nnauuR'; // Your TON address
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [debugInfo, setDebugInfo] = useState([]);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [wallet, setWallet] = useState(null);
+    const [balance, setBalance] = useState(null);
+    const [transactionStatus, setTransactionStatus] = useState(null);
 
-  const addDebugInfo = (message) => {
-    setDebugInfo((prevDebugInfo) => [...prevDebugInfo, message]);
-  };
+    useEffect(() => {
+        const init = async () => {
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    const tg = window.Telegram.WebApp;
+                    tg.ready();
 
-  const openTONWallet = useCallback(() => {
-    addDebugInfo('openTONWallet called');
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      const walletLink = `ton://transfer/${TON_ADDRESS}?amount=100000&text=Payment for services`;
-      addDebugInfo(`Opening link: ${walletLink}`);
-      try {
-        tg.openLink(walletLink);
-        addDebugInfo('Link opened');
-      } catch (error) {
-        addDebugInfo(`Error opening link: ${error.message}`);
-      }
-    } else {
-      addDebugInfo('Telegram WebApp not available');
+                    const initDataUnsafe = tg.initDataUnsafe || {};
+                    setUser(initDataUnsafe.user);
+
+                    const {wallet, keyPair} = await createWallet();
+                    setWallet(wallet);
+
+                    const balance = await getBalance(wallet);
+                    setBalance(balance);
+
+                    tg.MainButton.text = "Buy with TON";
+                    tg.MainButton.show();
+
+                    tg.MainButton.onClick(async () => {
+                        try {
+                            const transfer = await createTransfer(wallet, keyPair, TON_ADDRESS, '100000', 'Payment for virtual item');
+                            setTransactionStatus('Transaction successful');
+                        } catch (error) {
+                            setTransactionStatus(`Transaction failed: ${error.message}`);
+                        }
+                    });
+
+                    setLoading(false);
+                } else {
+                    setError(true);
+                    setLoading(false);
+                }
+            } catch (error) {
+                setError(true);
+                setLoading(false);
+            }
+        };
+
+        init();
+    }, []);
+
+    if (loading) {
+        return <div>Loading...</div>;
     }
-  }, []);
 
-  useEffect(() => {
-    const debugData = {};
-
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-
-      const initDataUnsafe = tg.initDataUnsafe || {};
-      debugData.initDataUnsafe = initDataUnsafe;
-      addDebugInfo(`initDataUnsafe: ${JSON.stringify(initDataUnsafe, null, 2)}`);
-      setDebugInfo((prevDebugInfo) => [...prevDebugInfo, debugData]);
-
-      const user = initDataUnsafe.user;
-
-      if (user) {
-        setUser(user);
-      }
-
-      // Set theme parameters
-      const {
-        bg_color = '#ffffff',
-        text_color = '#000000',
-        hint_color = '#707070',
-        link_color = '#0000ee',
-        button_color = '#0088cc',
-        button_text_color = '#ffffff'
-      } = tg.themeParams || {};
-
-      document.documentElement.style.setProperty('--bg-color', bg_color);
-      document.documentElement.style.setProperty('--text-color', text_color);
-      document.documentElement.style.setProperty('--hint-color', hint_color);
-      document.documentElement.style.setProperty('--link-color', link_color);
-      document.documentElement.style.setProperty('--button-color', button_color);
-      document.documentElement.style.setProperty('--button-text-color', button_text_color);
-
-      tg.MainButton.text = "Send TON";
-      tg.MainButton.color = button_color;
-      tg.MainButton.textColor = button_text_color;
-      tg.MainButton.show();
-
-      tg.MainButton.onClick(() => {
-        addDebugInfo('MainButton clicked');
-        openTONWallet();
-      });
-
-      setLoading(false);
-    } else {
-      addDebugInfo('Telegram WebApp not available');
-      setLoading(false);
-      setError(true);
+    if (error) {
+        return <div>Failed to load the app. Please try again.</div>;
     }
-  }, [openTONWallet]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
     return (
-        <div>
-          <div>Authentication failed or not accessed through Telegram</div>
-          <div className="debug-info">
-            <h2>Debug Information</h2>
-            <pre>{debugInfo.join('\n')}</pre>
-          </div>
+        <div className="App">
+            <h1>Welcome, {user?.first_name}</h1>
+            <p>Your wallet balance: {balance}</p>
+            {transactionStatus && <p>{transactionStatus}</p>}
         </div>
     );
-  }
-
-  return (
-      <div className="App">
-        <h1>Welcome, {user && user.first_name}</h1>
-        <div className="debug-info">
-          <h2>Debug Information</h2>
-          <pre>{debugInfo.join('\n')}</pre>
-        </div>
-      </div>
-  );
 }
 
 export default App;
