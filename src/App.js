@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [chat, setChat] = useState(null);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [debugInfo, setDebugInfo] = useState(null); // State for debug information
@@ -19,14 +20,10 @@ function App() {
       setDebugInfo(debugData); // Update debug information in the UI
 
       const user = initDataUnsafe.user;
-      const chat = initDataUnsafe.chat;
 
       if (user) {
         setUser(user);
-      }
-
-      if (chat) {
-        setChat(chat);
+        fetchUserProfilePhoto(user.id);
       }
 
       setLoading(false);
@@ -37,6 +34,44 @@ function App() {
       setError(true);
     }
   }, []);
+
+  const fetchUserProfilePhoto = async (userId) => {
+    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc'; 
+    try {
+      const response = await axios.post(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos`, {
+        user_id: userId,
+        limit: 1
+      });
+
+      if (response.data && response.data.result && response.data.result.photos.length > 0) {
+        const fileId = response.data.result.photos[0][0].file_id;
+        fetchFileUrl(fileId);
+      } else {
+        console.error('No profile photo found for the user');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile photo:', error);
+    }
+  };
+
+  const fetchFileUrl = async (fileId) => {
+    const botToken = '504867983:AAFbJmOu-o_ccB9rKvO5bj6-Qr7RMJEETTc'; 
+    try {
+      const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
+        params: { file_id: fileId }
+      });
+
+      if (response.data && response.data.result) {
+        const filePath = response.data.result.file_path;
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        setProfilePhotoUrl(fileUrl);
+      } else {
+        console.error('Error fetching file path');
+      }
+    } catch (error) {
+      console.error('Error fetching file URL:', error);
+    }
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -55,24 +90,9 @@ function App() {
     <div className="App">
       {user ? (
         <div>
-          <h1>Welcome, {user.first_name} {user.last_name}</h1>
-          <p>Username: {user.username}</p>
-          <p>Language: {user.language_code}</p>
-          <p>Allows Write to PM: {user.allows_write_to_pm ? 'Yes' : 'No'}</p>
-          <h2>Chat Information</h2>
-          {chat ? (
-            <div>
-              <p>Chat ID: {chat.id}</p>
-              <p>Type: {chat.type}</p>
-              {chat.title && <p>Title: {chat.title}</p>}
-              {chat.username && <p>Username: {chat.username}</p>}
-              {chat.first_name && <p>First Name: {chat.first_name}</p>}
-              {chat.last_name && <p>Last Name: {chat.last_name}</p>}
-            </div>
-          ) : (
-            <p>No chat information available</p>
-          )}
-          <h2>Debug Information</h2>
+          <h1>Welcome, {user.first_name}</h1>
+          {profilePhotoUrl && <img src={profilePhotoUrl} alt="Profile" />}
+          <pre>{JSON.stringify(user, null, 2)}</pre> {/* Display user information */}
           <pre>{JSON.stringify(debugInfo, null, 2)}</pre> {/* Display debug information */}
         </div>
       ) : (
